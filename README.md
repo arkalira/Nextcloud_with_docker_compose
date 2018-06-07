@@ -28,7 +28,6 @@ chown 600 /opt/traefik/acme.json
 
 ### Configuration for Nextcloud using NGINX WebProxy
 
-```
 ### Networks name
 
 - NETWORK=proxy
