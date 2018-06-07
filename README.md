@@ -1,12 +1,12 @@
 # Nextcloud_with_docker_compose
-
 ## Prerequisites
-In order to use this compose file (docker-compose.yml) you must have:
+
+- In order to use this compose file (docker-compose.yml) you must have:
 
 - docker: https://docs.docker.com/install/
 - docker-compose: https://docs.docker.com/compose/install/
 
-## How to use
+## How to use this contents
 ### Clone this repository
 
 ```
@@ -15,11 +15,16 @@ git clone https://github.com/arkalira/Nextcloud_with_docker_compose
 
 - Create 3 folders:
 
- - /opt/nextcloud
- - /opt/mysql
- - /opt/traefik
+```
+ mkdir -p /opt/nextcloud /opt/mysql /opt/traefik
+```
 
 - Make a copy of traefik folders content of this repo to /opt/traefik.
+
+```
+cp ./traefik/* /opt/traefik
+```
+
 - Give acme.json new permissions: 600
 
 ```
