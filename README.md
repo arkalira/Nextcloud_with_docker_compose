@@ -13,22 +13,32 @@ In order to use this compose file (docker-compose.yml) you must have:
 git clone https://github.com/arkalira/Nextcloud_with_docker_compose
 ```
 
-- Make a copy of our .env.sample and rename it to .env:
-- Update this file with your preferences.
+- Create 3 folders:
+
+ - /opt/nextcloud
+ - /opt/mysql
+ - /opt/traefik
+
+- Make a copy of traefik folders content of this repo to /opt/traefik.
+- Give acme.json new permissions: 600
+
+```
+chown 600 /opt/traefik/acme.json
+```
 
 ### Configuration for Nextcloud using NGINX WebProxy
 
 ```
 ### Networks name
 
-** Your container app must use a network conencted to your webproxy **
- - https://github.com/evertramos/docker-compose-letsencrypt-nginx-proxy-companion
-
-- NETWORK=frontend
-- NETWORK=backend
-
-## Start your container
+- NETWORK=proxy
 
 ```
-$ docker-compose up -d
+docker network create proxy
+```
+
+## Start your containers
+
+```
+docker-compose up --build -d
 ```
