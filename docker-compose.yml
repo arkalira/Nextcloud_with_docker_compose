@@ -1,44 +1,97 @@
 # Dockerized Nextcloud with: fpm, nginx, letsecnrypt, mariadb, letsecnrypt
-
-version: '3'
-
-services:
-   cloud-db:
-     container_name: ${DB_CONTAINER_NAME}
-     image: mariadb:latest
-     restart: unless-stopped
-     volumes:
-        - ${LOCAL_DB_DIR}:/var/lib/mysql
-     environment:
-       MYSQL_DATABASE: ${MYSQL_DATABASE}
-       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-       MYSQL_USER: ${MYSQL_USER}
-       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-
-   cloud-app:
-     depends_on:
-       - cloud-db
-     container_name: ${APP_CONTAINER_NAME}
-     image: nextcloud:latest
-     restart: unless-stopped
-     volumes:
-       - ${LOCAL_DATA_DIR}:/var/www/html
-       - ${LOCAL_CONF_DIR}:/var/www/html/config
-       - ${LOCAL_APPS_DIR}:/var/www/html/apps
-     environment:
-       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
-       NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
-       NEXTCLOUD_DATA_DIR: ${NEXTCLOUD_DATA_DIR}
-       NEXTCLOUD_TABLE_PREFIX: ${NEXTCLOUD_TABLE_PREFIX}
-       VIRTUAL_HOST: ${VIRTUAL_HOST}
-       LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
-       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
-       MYSQL_DATABASE: ${MYSQL_DATABASE}
-       MYSQL_USER: ${MYSQL_USER}
-       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-       MYSQL_HOST: ${MYSQL_HOST}
+version: "3.1"
 
 networks:
-    default:
-       external:
-         name: ${NETWORK}
+  frontend:
+    external:
+      name: frontend
+  backend:
+    external:
+      name: backend
+
+services:
+  traefik:
+    image: traefik
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    container_name: traefik
+    hostname: traefik
+    environment:
+      - LC_ALL=C.UTF-8
+      - TZ=Europe/Madrid
+    labels:
+      - traefik.enable=true
+      - traefik.backend=traefik
+      - traefik.frontend.rule=Host:traefik.batz.com
+      - traefik.docker.network=frontend
+      - traefik.port=8080
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/traefik:/etc/traefik
+    mem_limit: 50M
+    memswap_limit: 50M
+    logging:
+      driver: json-file
+        options:
+          max-size: "10m"
+          max-file: "3"
+    networks:
+      - frontend
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+
+  nextcloud:
+    image: nextcloud:13-apache
+    container_name: nextcloud
+    hostname: netcloud
+    environment:
+          - LC_ALL=C.UTF-8
+          - TZ=Europe/Madrid
+    volumes:
+      - "/opt/nextcloud/data:/var/www/html"
+    deploy:
+      labels:
+        - traefik.port=80
+        - traefik.frontend.rule=Host:nc.batz.com
+        - traefik.enable=true
+        - traefik.backend=nextcloud
+        - traefik.docker.network=frontend
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb
+    container_name: db
+    hostname: db
+    environment:
+      - LC_ALL=C.UTF-8
+      - TZ=Europe/Madrid
+      - MYSQL_DATABASE=db_nextcloud
+      - MYSQL_ROOT_PASSWORD=nextcloud
+      - MYSQL_HOST=db
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=nextcloud
+    labels:
+      - traefik.enable=false
+    restart: unless-stopped
+    volumes:
+      - /opt/mysql/data:/var/lib/mysql
+    healthcheck:
+      test: mysqladmin ping -h localhost || exit 1
+      interval: 60s
+      timeout: 10s
+      retries: 5
+    networks:
+      - backend
+    expose:
+      - 3306
