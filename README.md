@@ -1,4 +1,4 @@
-# Nextcloud_with_docker_compose
+# Nextcloud with docker compose and Traefik
 ## Prerequisites
 
 - In order to use this compose file (docker-compose.yml) you must have:
@@ -31,9 +31,9 @@ cp ./traefik/* /opt/traefik
 chown 600 /opt/traefik/acme.json
 ```
 
-### Configuration for Nextcloud using NGINX WebProxy
+### Configuration for Nextcloud using Traefik WebProxy
 
-### Networks name
+### Network name
 
 - NETWORK=proxy
 
