@@ -1,19 +1,43 @@
+# Default Entrypoints HTTP HTTPS
 defaultEntryPoints = ["http", "https"]
+
+debug = true
+logLevel = "DEBUG"
+
+#defaultEntryPoints = ["http"]
+
 [web]
-address = ":8080"
-  [web.auth.basic]
-  users = ["admin:passwordhash"]
+  address = ":9000"
+#  [web.auth.basic]
+#  users = ["admin:admin"]
+
 [entryPoints]
+
   [entryPoints.http]
   address = ":80"
     [entryPoints.http.redirect]
       entryPoint = "https"
+
   [entryPoints.https]
   address = ":443"
     [entryPoints.https.tls]
+
+[docker]
+endpoint = "unix:///var/run/docker.sock"
+domain = "docker.local"
+watch = true
+exposedbydefault = false
+
 [acme]
-email = "your@email.address"
-storage = "acme.json"
+email = "acme@example.com"
+storage = "/acme.json"
 entryPoint = "https"
 onHostRule = true
-onDemand = false
+onDemand = true
+caServer = "https://acme-v01.api.letsencrypt.org/directory"
+acmeLogging = true
+[acme.httpChallenge]
+  entryPoint = "http"
+
+[[acme.domains]]
+  main = "nextcloud.example.com"
