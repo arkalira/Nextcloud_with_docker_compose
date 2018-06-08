@@ -8,29 +8,32 @@ networks:
 
 services:
   traefik:
-    image: traefik:1.4.4-alpine
+    image: traefik:latest
     command: --docker
     container_name: traefik
     hostname: traefik
     labels:
-      - traefik.frontend.rule=Host:monitor.mydomain.com
-      - traefik.port=8080
+      - traefik.backend=traefik
+      - traefik.frontend.rule=Host:traefik.example.com
+      - traefik.docker.network=proxy
+      - traefik.port=9000
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /opt//traefik/traefik.toml:/traefik.toml
+      - /opt/traefik/traefik.toml:/traefik.toml
       - /opt/traefik/acme.json:/acme.json
     networks:
       - proxy
     ports:
       - 80:80
       - 443:443
+      - 8080:8080
+      - 9000:9000
 
   nextcloud:
-    image: nextcloud
-    environment:
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=root
+    image: nextcloud:latest
+    container_name: nextcloud
+    hostname: nextcloud
     links:
       - mysql
     restart: always
@@ -38,7 +41,7 @@ services:
       - /opt/nextcloud:/var/www/html
     labels:
       - traefik.backend=nextcloud
-      - traefik.frontend.rule=Host:nextcloud.mydomain.com
+      - traefik.frontend.rule=Host:nextcloud.example.com
       - traefik.docker.network=proxy
       - traefik.port=80
     networks:
@@ -49,8 +52,13 @@ services:
 
   mysql:
     image: mariadb:latest
+    container_name: mysql
+    hostname: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: nextcloud
+      MYSQL_DATABASE: DATABASE
+      MYSQL_ROOT_PASSWORD: ROOTPASS
+      MYSQL_USER: USERDB
+      MYSQL_PASSWORD: USERPASS
     restart: always
     volumes:
       - /opt/mysql:/var/lib/mysql
@@ -60,10 +68,12 @@ services:
       - traefik.enable=false
 
   adminer:
-    image: adminer:4.3.1-standalone
+    image: adminer:latest
+    container_name: adminer
+    hostname: adminer
     labels:
       - traefik.backend=adminer
-      - traefik.frontend.rule=Host:db-admin.mydomain.com
+      - traefik.frontend.rule=Host:adminer.example.com
       - traefik.docker.network=proxy
       - traefik.port=8080
     networks:
